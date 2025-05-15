@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Add/Edit Run</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+<div class="max-w-4xl mx-auto p-4">
+<h1 th:text="${run.id} != null ? 'Edit Run' : 'New Run'"></h1>
+<form th:action="@{/runs}" th:object="${run}" method="post">
+    <input type="hidden" th:field="*{id}" />
+    <label>Date: <input type="date" th:field="*{date}" /></label><br>
+    <label>Distance (km): <input type="number" step="0.1" th:field="*{distance}" /></label><br>
+    <label>Duration (hh:mm:ss): <input type="text" th:field="*{duration}" /></label><br>
+    <label>Notes: <textarea th:field="*{notes}"></textarea></label><br>
+    <button type="submit">Save</button>
+</form>
+<a href="/runs">Back</a>
+</div>
+</body>
+</html>
