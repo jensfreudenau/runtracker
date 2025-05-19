@@ -31,5 +31,14 @@
         </tbody>
     </table>
 </div>
+<!-- z. B. in JavaScript -->
+<script>
+    function logout() {
+        localStorage.removeItem("token");
+        window.location.href = "/login?logout";
+    }
+</script>
+
+<button onclick="logout()">Logout</button>
 </body>
 </html>

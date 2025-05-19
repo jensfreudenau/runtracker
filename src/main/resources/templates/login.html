@@ -1,0 +1,29 @@
+<!-- src/main/resources/templates/login.html -->
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head}"></head>
+<body class="bg-gray-100 text-gray-900 p-6 m-5">
+<div class="min-h-screen">
+    <div class="mx-auto   py-6 sm:px-6 lg:px-8 text-lg ">
+        <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 text-black ">
+            <div class="flex flex-col">
+                <article class="shadow-md bg-white dark:bg-gray-800 tracking-wide pb-24">
+                    <nav th:replace="~{fragments/navbar :: nav}"></nav>
+                    <main class="max-w-md mx-auto mt-20 p-6 bg-white rounded-xl shadow">
+                        <h1 class="text-2xl font-semibold mb-6">Login</h1>
+                        <form th:action="@{/login}" method="post" class="flex flex-col gap-4">
+                            <input type="text" name="username" placeholder="Benutzername" required class="input "/>
+                            <input type="password" name="password" placeholder="Passwort" required class="input"/>
+                            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                                Einloggen
+                            </button>
+                        </form>
+                    </main>
+                </article>
+            </div>
+        </div>
+    </div>
+</div>
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+</html>
