@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head}"></head>
+<body class="bg-gray-100 text-gray-900 p-6 m-5">
+<div class="min-h-screen">
+    <div class="mx-auto py-6 sm:px-6 lg:px-8 text-lg">
+        <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 text-black">
+            <div class="flex flex-col">
+                <article class="shadow-md bg-white dark:bg-gray-800 tracking-wide pb-24">
+                    <nav th:replace="~{fragments/navbar :: nav}"></nav>
+                    <main class="max-w-md mx-auto mt-20 p-6 bg-white rounded-xl shadow">
+                        <h1 class="text-2xl font-semibold mb-6" th:text="${pageTitle}"></h1>
+
+                        <div th:if="${error}" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                            <span class="block sm:inline" th:text="${error}"></span>
+                        </div>
+
+                        <form th:action="@{/profile}" th:object="${profile}" method="post" enctype="multipart/form-data"  class="flex flex-col gap-4">
+
+                            <input type="hidden" th:field="*{id}" />
+                            <label for="date" class="block text-sm font-medium text-gray-700">Datum:</label>
+                            <input type="date" id="date" th:field="*{birthday}" required class="input px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+
+                            <label for="distance" class="block text-sm font-medium text-gray-700">Distanz (km):</label>
+                            <input type="number" step="0.01" id="distance" th:field="*{photo}" required class="input px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+                            <div>
+                                <label for="imageFile" class="block text-sm font-medium text-gray-700">Wähle ein Bild aus:</label>
+                                <input type="file" id="imageFile" name="imageFile" accept="image/*"
+                                       class="mt-1 block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" />
+                                <p class="mt-1 text-xs text-gray-500">Nur Bilddateien (.jpg, .png, .gif, etc.) erlaubt.</p>
+                            </div>
+
+                            <label for="duration" class="block text-sm font-medium text-gray-700">Dauer (HH:MM:SS):</label>
+                            <input type="text" id="duration" th:field="*{sex}" placeholder="z.B. 01:30:00" class="input px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+
+                            <label for="notes" class="block text-sm font-medium text-gray-700">Notizen:</label>
+                            <textarea id="notes" th:field="*{mainClub}" rows="3" class="input px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+
+                            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Speichern</button>
+                            <a th:href="@{/runs}" class="block text-center mt-2 text-gray-600 hover:text-gray-800">Abbrechen</a>
+                        </form>
+                        <div th:if="${message}" class="mt-4 p-3 rounded-md text-sm"
+                             th:classappend="${'bg-green-100 text-green-800' eq messageType ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                            <p th:text="${message}"></p>
+                        </div>
+                    </main>
+                </article>
+            </div>
+        </div>
+    </div>
+</div>
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+</html>

@@ -1,53 +1,37 @@
 package com.runnertracker.config;
 
-import com.runnertracker.service.UserService;
+import com.runnertracker.service.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.config.annotation.web.configurers.LogoutConfigurer;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-
-
 
 import java.util.Optional;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+    private final CustomUserDetailsService customUserDetailsService; // Injiziere deinen Service
 
-    private final UserService userService;
-    private final PasswordEncoder passwordEncoder;
-
-    public SecurityConfig(UserService userService, PasswordEncoder passwordEncoder) {
-        this.userService = userService;
-        this.passwordEncoder = passwordEncoder;
+    public SecurityConfig(CustomUserDetailsService customUserDetailsService) {
+        this.customUserDetailsService = customUserDetailsService;
     }
 
     @Bean
-    public UserDetailsService userDetailsService() {
-        return username -> {
-            Optional<com.runnertracker.model.User> userOptional = userService.findByUsername(username);
-            return userOptional.map(user ->
-                    new org.springframework.security.core.userdetails.User(
-                            user.getUsername(),
-                            user.getPassword(),
-                            user.getRoles().stream()
-                                    .map(role -> new org.springframework.security.core.authority.SimpleGrantedAuthority(role.getName()))
-                                    .toList()
-                    )).orElseThrow(() -> new UsernameNotFoundException("Benutzername nicht gefunden: " + username));
-        };
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
-
     @Bean
-    public DaoAuthenticationProvider authenticationProvider() {
+    public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService());
-        authProvider.setPasswordEncoder(passwordEncoder);
+        authProvider.setUserDetailsService(customUserDetailsService); // <-- Hier ist der Schlüssel!
+        authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
 
@@ -55,20 +39,17 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests((requests) -> requests
-                        .requestMatchers("/", "/register", "/login", "/css/**", "/js/**").permitAll() // Wichtig: /login hinzufügen
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/", "/register", "/login", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/runs").authenticated() // Erfordert Authentifizierung für /runs
+                        .requestMatchers("/admin/**").hasRole("ADMIN") // Beispiel für Admin-Bereich
                         .anyRequest().authenticated()
                 )
                 .formLogin((form) -> form
                         .loginPage("/login")
                         .permitAll()
-                        .defaultSuccessUrl("/runs", true)
+                        .defaultSuccessUrl("/runs", true) // Weiterleitung nach erfolgreichem Login nach /runs
                 )
-                .logout((logout) -> logout
-                        .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
-                        .permitAll()
-                        .logoutSuccessUrl("/login?logout")
-                )
+                .logout(LogoutConfigurer::permitAll)
                 .authenticationProvider(authenticationProvider());
 
         return http.build();

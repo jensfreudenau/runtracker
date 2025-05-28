@@ -18,7 +18,7 @@ public class AuthController {
 
     @GetMapping("/login")
     public String login() {
-        return "login";
+        return "login"; // Dies sollte NUR den Namen des Templates zurückgeben
     }
 
     @GetMapping("/register")
