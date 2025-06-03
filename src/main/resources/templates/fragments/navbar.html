@@ -6,11 +6,18 @@
                 <div>
                     <a href="/" class="font-bold text-gray-400 rounded-md px-3 py-2">🏃 RunTracker</a>
                 </div>
-                <div>
-                    <a href="/login" class="mr-4 text-gray-400 rounded-md px-3 py-2">Login</a>
-                    <a href="/register" class="mr-4 text-gray-400 rounded-md px-3 py-2">Register</a>
+                <div sec:authorize="!isAuthenticated()">
+                    <a th:href="@{/login}" class="mr-4 text-gray-400 rounded-md px-3 py-2">Login</a>
+                    <a class="mr-4 text-gray-400 rounded-md px-3 py-2" th:href="@{/registrierung}">Registrieren</a>
+                </div>
+                <div sec:authorize="isAuthenticated()">
                     <a href="/runs" class="mr-4 text-gray-400 rounded-md px-3 py-2">Runs</a>
+                    <a href="/runs/events" class="mr-4 text-gray-400 rounded-md px-3 py-2">Evenet</a>
                     <a href="/profile" class="mr-4 text-gray-400 rounded-md px-3 py-2">Profil</a>
+                        Hallo, <span sec:authentication="name">Benutzer</span>!
+                        <form th:action="@{/logout}" method="post" style="display: inline;">
+                        <button type="submit" class="logout-button">Logout</button>
+                    </form>
                 </div>
             </div>
         </div>

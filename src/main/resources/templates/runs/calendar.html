@@ -1,0 +1,71 @@
+<head th:replace="~{fragments/header :: head}"></head>
+<nav th:replace="~{fragments/navbar :: nav}"></nav>
+<article class="shadow-md bg-white dark:bg-gray-800  pb-24">
+    <main class="  mt-20 p-6 bg-white rounded-xl  ">
+        <h1 class="text-2xl font-semibold mb-6" th:text="${pageTitle}"></h1>
+        <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-xl overflow-hidden mt-8">
+            <div class="flex items-center justify-between bg-blue-600 text-white p-4 text-center text-2xl font-bold">
+                <a th:href="@{/runs/events(year=${currentDate.minusMonths(1).getYear()}, month=${currentDate.minusMonths(1).getMonthValue()})}"
+                   class="bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded-full text-base transition-colors duration-200">
+                    &larr;
+                </a>
+
+                <div>
+                    <span th:text="${currentDate.getMonth().getDisplayName(T(java.time.format.TextStyle).FULL, T(java.util.Locale).GERMAN)}">Juni</span>
+                    <span th:text="${currentDate.getYear()}">2025</span>
+                </div>
+
+                <a th:href="@{/runs/events(year=${currentDate.plusMonths(1).getYear()}, month=${currentDate.plusMonths(1).getMonthValue()})}"
+                   class="bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded-full text-base transition-colors duration-200">
+                    &rarr;
+                </a>
+            </div>
+
+            <div class="grid grid-cols-7 text-center font-semibold text-gray-700 border-b border-gray-200">
+                <div class="py-2">Mo</div>
+                <div class="py-2">Di</div>
+                <div class="py-2">Mi</div>
+                <div class="py-2">Do</div>
+                <div class="py-2">Fr</div>
+                <div class="py-2">Sa</div>
+                <div class="py-2">So</div>
+            </div>
+
+            <div class="grid grid-cols-7">
+                <th:block th:with="firstDayOfMonth=${currentDate.withDayOfMonth(1)},
+                           daysInMonth=${currentDate.lengthOfMonth()},
+                           startDayOfWeek=${firstDayOfMonth.getDayOfWeek().getValue() % 7}">
+                    <div th:each="i : ${#numbers.sequence(0, startDayOfWeek - 1)}"
+                         class="border border-gray-200 min-h-[100px] text-gray-400"></div>
+
+                    <div th:each="dayNum : ${#numbers.sequence(1, daysInMonth)}"
+                         class="border border-gray-200 p-2 min-h-[100px] flex flex-col items-start relative">
+                        <span class="font-bold text-lg mb-2" th:text="${dayNum}">1</span>
+
+                        <th:block
+                                th:with="currentDay = ${T(java.time.LocalDate).of(currentDate.getYear(), currentDate.getMonth(), dayNum)}">
+                            <div th:if="${eventsByDate.containsKey(currentDay)}" class="w-full">
+                                <div th:each="event : ${eventsByDate.get(currentDay)}"
+                                     class="event bg-emerald-100 border-l-4 border-emerald-500 text-emerald-800 p-1 mb-1 text-sm rounded-sm cursor-pointer hover:bg-emerald-200 transition-colors duration-200">
+                                    <span class="font-semibold" th:text="${#temporals.format(event.time, 'HH:mm')}">18:00</span>
+                                    <span th:text="${event.name}">Fußballtraining</span>
+                                    <div class="event-details hidden mt-1 text-xs text-emerald-700">
+                                        <p th:text="${event.location}"></p>
+                                        <p th:text="${event.description}"></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div th:unless="${eventsByDate.containsKey(currentDay)}"
+                                 class="text-gray-500 italic text-sm">
+
+                            </div>
+                        </th:block>
+                    </div>
+                </th:block>
+            </div>
+        </div>
+    </main>
+</article>
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+</html>

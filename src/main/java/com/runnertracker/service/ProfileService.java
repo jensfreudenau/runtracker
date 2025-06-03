@@ -41,4 +41,15 @@ public class ProfileService {
             throw new IllegalArgumentException("Profil nicht gefunden oder gehört nicht zum Benutzer " + userId);
         }
     }
+
+    public void saveImagePath(String newFilename, Long userId) {
+        Optional<Profile> profileOptional = profileRepository.findByUserId(userId);
+        if (profileOptional.isPresent()) {
+            Profile profile = profileOptional.get();
+            profile.setPhoto(newFilename);
+            profileRepository.save(profile);
+        } else {
+            throw new IllegalArgumentException("Profil nicht gefunden oder gehört nicht zum Benutzer " + userId);
+        }
+    }
 }

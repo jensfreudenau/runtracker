@@ -1,7 +1,9 @@
 package com.runnertracker.service;
 
+import com.runnertracker.model.Lap;
 import com.runnertracker.model.Run;
 import com.runnertracker.model.User;
+import com.runnertracker.repository.LapRepository;
 import com.runnertracker.repository.RunRepository;
 import com.runnertracker.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -14,10 +16,12 @@ import java.util.Optional;
 public class RunService {
     private final RunRepository runRepository;
     private final UserRepository userRepository;
+    private final LapRepository lapRepository; // Injizieren
 
-    public RunService(RunRepository runRepository, UserRepository userRepository) {
+    public RunService(RunRepository runRepository, UserRepository userRepository, LapRepository lapRepository) {
         this.runRepository = runRepository;
         this.userRepository = userRepository;
+        this.lapRepository = lapRepository;
     }
 
     public List<Run> findRunsByUsername(String username) {
@@ -26,12 +30,16 @@ public class RunService {
     }
     // Neue Methode: Lauf speichern oder aktualisieren
     @Transactional
-    public Run saveRun(Run run, String username) {
+    public void saveRun(Run run, String username) {
         // Sicherstellen, dass der Lauf dem eingeloggten Benutzer zugeordnet wird
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("Benutzer nicht gefunden: " + username));
         run.setUser(user);
-        return runRepository.save(run);
+        // Sicherstellen, dass jede Lap ihrem Run zugeordnet ist, bevor gespeichert wird
+        if (run.getLaps() != null) {
+            run.getLaps().forEach(lap -> lap.setRun(run));
+        }
+        runRepository.save(run);
     }
 
     // Neue Methode: Lauf anhand der ID finden
@@ -54,7 +62,28 @@ public class RunService {
             throw new IllegalArgumentException("Lauf mit ID " + id + " nicht gefunden oder gehört nicht zum Benutzer " + username);
         }
     }
+    @Transactional
+    public Lap addLapToRun(Long runId, Lap lap, String username) {
+        Run run = findRunByIdAndUsername(runId, username)
+                .orElseThrow(() -> new IllegalArgumentException("Lauf nicht gefunden oder nicht berechtigt."));
 
+        lap.setRun(run);
+        // Optional: Setze die Rundenummer, falls nicht vom Frontend übergeben
+        if (lap.getLapNumber() == 0) {
+            lap.setLapNumber(run.getLaps().size() + 1);
+        }
+
+        run.getLaps().add(lap); // Füge die Runde zur Liste des Laufs hinzu (bidirektional)
+        runRepository.save(run); // Speichert den Lauf und kaskadiert die Runde
+        return lap; // Oder return lapRepository.save(lap); wenn lapRepository für sichere Speicherung verwendet werden soll.
+    }
+
+    // Beispiel: Methode zum Abrufen der Runden eines Laufs
+    public List<Lap> getLapsForRun(Long runId, String username) {
+        Run run = findRunByIdAndUsername(runId, username)
+                .orElseThrow(() -> new IllegalArgumentException("Lauf nicht gefunden oder nicht berechtigt."));
+        return lapRepository.findByRunOrderByLapNumberAsc(run);
+    }
     public Run findById(Long id) {
         return runRepository.findById(id).orElseThrow();
     }

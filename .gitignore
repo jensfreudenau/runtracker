@@ -34,3 +34,4 @@ build/
 /frontend/node_modules
 /src/main/resources/static/css/styles.css
 /target
+/src/main/resources/static/uploads/1/

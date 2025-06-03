@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
 @Entity
@@ -19,6 +20,7 @@ public class Profile {
 
     private String name;
     private String photo;
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) // Erwartet YYYY-MM-DD für eingehende Daten (vom HTML-Date-Input)
     private LocalDate birthday;
     private String sex;
     private String place;

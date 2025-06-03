@@ -1,13 +1,7 @@
-<!DOCTYPE html>
-<html lang="de" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/header :: head}"></head>
-<body class="bg-gray-100 text-gray-900 p-6 m-5">
-<div class="min-h-screen">
-    <div class="mx-auto py-6 sm:px-6 lg:px-8 text-lg">
-        <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 text-black">
-            <div class="flex flex-col">
+<nav th:replace="~{fragments/navbar :: nav}"></nav>
+
                 <article class="shadow-md bg-white dark:bg-gray-800 tracking-wide pb-24">
-                    <nav th:replace="~{fragments/navbar :: nav}"></nav>
                     <main class="max-w-md mx-auto mt-20 p-6 bg-white rounded-xl shadow">
                         <h1 class="text-2xl font-semibold mb-6" th:text="${pageTitle}"></h1>
 
@@ -36,12 +30,18 @@
                             <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Speichern</button>
                             <a th:href="@{/runs}" class="block text-center mt-2 text-gray-600 hover:text-gray-800">Abbrechen</a>
                         </form>
+                        <form th:action="@{/runs/uploadFit}" method="post" enctype="multipart/form-data" class="mb-8 p-4 border border-gray-200 rounded-md bg-gray-50">
+                            <div class="mb-4">
+                                <label for="fitFile" class="block text-gray-700 text-sm font-bold mb-2">Wähle eine .FIT-Datei:</label>
+                                <input type="file" name="file" id="fitFile" accept=".fit" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                            </div>
+                            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                                FIT-Datei hochladen
+                            </button>
+                        </form>
                     </main>
                 </article>
-            </div>
-        </div>
-    </div>
-</div>
+
 <footer th:replace="~{fragments/footer :: footer}"></footer>
 </body>
 </html>
