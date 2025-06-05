@@ -46,7 +46,7 @@ public class FitFileService {
             decode.read(inputStream, broadcaster, broadcaster);
             return listener;
         } catch (Exception e) {
-            throw new FitException("Fehler beim Parsen der FIT-Datei", e);
+            throw new FitException("Fehler beim Parsen der FIT-Datei");
         }
     }
 

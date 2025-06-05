@@ -28,12 +28,13 @@ public class RunController {
     private final RunService runService;
     private final FitFileService fitFileService;
     private List<Run> runs = new ArrayList<>();
-    private Long nextId = 1L; // Einfacher Zähler für IDs
+    public Long nextId = 1L; // Einfacher Zähler für IDs
 
-    public RunController(RunService runService, FitFileService fitFileService, FitFileService fitFileService1) {
-
+    public RunController(RunService runService, FitFileService fitFileService) {
         this.runService = runService;
-        this.fitFileService = fitFileService1;
+        this.fitFileService = fitFileService; // Jetzt korrekt zugewiesen
+
+        // Deine Dummy-Daten-Initialisierung
         runs.add(new Run("Morgenlauf", LocalDate.of(2025, 6, 1), LocalTime.of(8, 0), "Park", "Frischer Start", 3.0));
         runs.add(new Run("Abendjogging", LocalDate.of(2025, 6, 3), LocalTime.of(19, 30), "Waldweg", "Nach der Arbeit", 3.5));
         runs.forEach(run -> run.setId(nextId++));
@@ -145,46 +146,45 @@ public class RunController {
 
     // --- Neue Methode für den FIT-Upload ---
     @PostMapping("/uploadFit")
-    public String uploadFitFile(@RequestParam("file") MultipartFile file,
-                                RedirectAttributes redirectAttributes) {
+    public String uploadFitFile(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes) {
         if (file.isEmpty()) {
             redirectAttributes.addFlashAttribute("message", "Bitte wählen Sie eine Datei zum Hochladen aus.");
             return "redirect:/runs/edit";
         }
 
-//        try (InputStream inputStream = file.getInputStream()) {
-//            double averageSpeed = fitFileService.getAverageSpeedFromFitFile(inputStream);
-//
-//            if (averageSpeed != -1.0) {
-//                // Hier könntest du weitere Metadaten aus der FIT-Datei extrahieren,
-//                // z.B. Startzeit, Datum, Distanz, etc., um einen vollständigeren Run zu erstellen.
-//                // Für dieses Beispiel erstellen wir nur einen einfachen Run mit der Geschwindigkeit.
-//
-//                Run newRun = new Run();
-//                newRun.setName(file.getOriginalFilename() != null ? file.getOriginalFilename() : "FIT-Aktivität");
-//                newRun.setDate(LocalDate.now()); // Standardmäßig das heutige Datum
-//                newRun.setTime(LocalTime.now()); // Standardmäßig die aktuelle Zeit
-//                newRun.setAverageSpeed(averageSpeed);
-//                newRun.setDescription("Importiert aus FIT-Datei.");
-//
-//                // Füge den neuen Lauf zu deiner Liste/Datenbank hinzu
-//                newRun.setId(nextId++);
-//                runs.add(newRun);
-//
-//                redirectAttributes.addFlashAttribute("message",
-//                        String.format("Datei erfolgreich hochgeladen! Durchschnittsgeschwindigkeit: %.2f km/h", averageSpeed * 3.6));
-//            } else {
-//                redirectAttributes.addFlashAttribute("message",
-//                        "FIT-Datei erfolgreich hochgeladen, aber keine Durchschnittsgeschwindigkeit gefunden.");
-//            }
-//
-//        } catch (FitException e) {
-//            redirectAttributes.addFlashAttribute("message", "Fehler beim Parsen der FIT-Datei: " + e.getMessage());
-//            e.printStackTrace();
-//        } catch (Exception e) {
-//            redirectAttributes.addFlashAttribute("message", "Fehler beim Hochladen oder Verarbeiten der Datei: " + e.getMessage());
-//            e.printStackTrace();
-//        }
+        try (InputStream inputStream = file.getInputStream()) {
+            double averageSpeed = fitFileService.getAvgSpeedKmPerHour(inputStream);
+
+            if (averageSpeed != -1.0) {
+                // Hier könntest du weitere Metadaten aus der FIT-Datei extrahieren,
+                // z.B. Startzeit, Datum, Distanz, etc., um einen vollständigeren Run zu erstellen.
+                // Für dieses Beispiel erstellen wir nur einen einfachen Run mit der Geschwindigkeit.
+
+                Run newRun = new Run();
+                newRun.setName(file.getOriginalFilename() != null ? file.getOriginalFilename() : "FIT-Aktivität");
+                newRun.setDate(LocalDate.now()); // Standardmäßig das heutige Datum
+                newRun.setTime(LocalTime.now()); // Standardmäßig die aktuelle Zeit
+                newRun.setAverageSpeed(averageSpeed);
+                newRun.setDescription("Importiert aus FIT-Datei.");
+
+                // Füge den neuen Lauf zu deiner Liste/Datenbank hinzu
+                newRun.setId(nextId++);
+                runs.add(newRun);
+
+                redirectAttributes.addFlashAttribute("message",
+                        String.format("Datei erfolgreich hochgeladen! Durchschnittsgeschwindigkeit: %.2f km/h", averageSpeed));
+            } else {
+                redirectAttributes.addFlashAttribute("message",
+                        "FIT-Datei erfolgreich hochgeladen, aber keine Durchschnittsgeschwindigkeit gefunden.");
+            }
+
+        } catch (FitException e) {
+            redirectAttributes.addFlashAttribute("message", "Fehler beim Parsen der FIT-Datei: " + e.getMessage());
+            e.printStackTrace();
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("message", "Fehler beim Hochladen oder Verarbeiten der Datei: " + e.getMessage());
+            e.printStackTrace();
+        }
 
         return "redirect:/runs"; // Weiterleitung zurück zur Bearbeitungsseite
     }
