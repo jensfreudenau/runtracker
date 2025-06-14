@@ -27,16 +27,16 @@
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Datum</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Distanz (km)</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dauer</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notizen</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sport</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aktionen</th>
                 </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                 <tr th:each="run : ${runs}">
-                    <td class="px-6 py-4 whitespace-nowrap" th:text="${#temporals.format(run.date, 'dd.MM.yyyy')}"></td>
-                    <td class="px-6 py-4 whitespace-nowrap" th:text="${#numbers.formatDecimal(run.distance,2,1,'COMMA')}"></td>
+                    <td class="px-6 py-4 whitespace-nowrap" th:text="${run.starttime}"></td>
+                    <td class="px-6 py-4 whitespace-nowrap" th:text="${#numbers.formatDecimal(run.distance/1000,1,2,'COMMA')}"></td>
                     <td class="px-6 py-4 whitespace-nowrap" th:text="${run.duration}"></td>
-                    <td class="px-6 py-4 whitespace-nowrap" th:text="${run.notes}"></td>
+                    <td class="px-6 py-4 whitespace-nowrap" th:text="${run.sport_profile_name}"></td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <a th:href="@{/runs/{id}(id=${run.id})}" class="text-blue-600 hover:text-blue-900 ml-4">Runden anzeigen</a>
                         <a th:href="@{/runs/edit/{id}(id=${run.id})}" class="text-indigo-600 hover:text-indigo-900 mr-4">Bearbeiten</a>

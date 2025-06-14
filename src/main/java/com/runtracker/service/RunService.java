@@ -28,9 +28,8 @@ public class RunService {
         Optional<User> userOptional = userRepository.findByUsername(username);
         return userOptional.map(runRepository::findByUser).orElse(List.of());
     }
-    // Neue Methode: Lauf speichern oder aktualisieren
     @Transactional
-    public void saveRun(Run run, String username) {
+    public Long saveRun(Run run, String username) {
         // Sicherstellen, dass der Lauf dem eingeloggten Benutzer zugeordnet wird
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("Benutzer nicht gefunden: " + username));
@@ -40,6 +39,7 @@ public class RunService {
             run.getLaps().forEach(lap -> lap.setRun(run));
         }
         runRepository.save(run);
+        return run.getId();
     }
 
     // Neue Methode: Lauf anhand der ID finden
@@ -84,8 +84,8 @@ public class RunService {
                 .orElseThrow(() -> new IllegalArgumentException("Lauf nicht gefunden oder nicht berechtigt."));
         return lapRepository.findByRunOrderByLapNumberAsc(run);
     }
-    public Run findById(Long id) {
-        return runRepository.findById(id).orElseThrow();
+    public Optional<Run> findById(Long id) {
+        return runRepository.findById(id);
     }
 
     public Run save(Run run) {

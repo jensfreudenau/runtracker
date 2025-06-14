@@ -5,60 +5,102 @@
     <main class="max-w-4xl mx-auto mt-20 p-6 bg-white rounded-xl shadow">
         <h1 class="text-2xl font-semibold mb-6" th:text="${pageTitle}"></h1>
 
-        <div th:if="${message}" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+        <div th:if="${message}"
+             class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
             <span class="block sm:inline" th:text="${message}"></span>
         </div>
-        <div th:if="${error}" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+        <div th:if="${error}" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
+             role="alert">
             <span class="block sm:inline" th:text="${error}"></span>
         </div>
 
         <div class="mb-8 p-4 border rounded-md bg-gray-50">
-            <h2 class="text-xl font-semibold mb-2">Lauf: <span th:text="${run.date}"></span></h2>
-            <p><strong>Distanz:</strong> <span th:text="${run.distance}"></span> km</p>
-            <p><strong>Dauer:</strong> <span th:text="${run.duration}"></span></p>
+            <h2 class="text-xl font-semibold mb-2">Lauf:
+                <span th:text="${#temporals.format(run.date, 'dd.MM.yyyy')}"></span>
+                <span th:text="${#temporals.format(run.starttime, 'dd.MM.yyyy')}"></span>
+            </h2>
+            <p><strong>Distanz:</strong>
+                <span th:text="${@distanceUtils.formatToKilometersDecimal(run.distance)}">0</span>
+
+
+            </p>
+            <p><strong>Dauer:</strong>
+                <span th:text="${run.duration}"></span>
+            </p>
             <p><strong>Notizen:</strong> <span th:text="${run.notes}"></span></p>
-            <a th:href="@{/runs/edit/{id}(id=${run.id})}" class="text-indigo-600 hover:text-indigo-900 mt-2 block">Lauf bearbeiten</a>
+            <a th:href="@{/runs/edit/{id}(id=${run.id})}" class="text-indigo-600 hover:text-indigo-900 mt-2 block">Lauf
+                bearbeiten</a>
         </div>
 
         <h2 class="text-xl font-semibold mb-4">Runden des Laufs</h2>
 
         <div class="mb-8 p-4 border rounded-md bg-white shadow">
             <h3 class="text-lg font-semibold mb-2">Neue Runde hinzufügen</h3>
-            <form th:action="@{/runs/{runId}/addLap(runId=${run.id})}" th:object="${newLap}" method="post" class="flex flex-col gap-3">
+            <form th:action="@{/runs/{runId}/addLap(runId=${run.id})}" th:object="${newLap}" method="post"
+                  class="flex flex-col gap-3">
                 <label for="lapNumber" class="block text-sm font-medium text-gray-700">Rundennummer:</label>
-                <input type="number" id="lapNumber" th:field="*{lapNumber}" placeholder="Optional" class="input px-3 py-2 border rounded-md shadow-sm" />
+                <input type="number" id="lapNumber" th:field="*{lapNumber}" placeholder="Optional"
+                       class="input px-3 py-2 border rounded-md shadow-sm"/>
 
-                <label for="lapDistance" class="block text-sm font-medium text-gray-700">Distanz dieser Runde (km, optional):</label>
-                <input type="number" step="0.01" id="lapDistance" th:field="*{distance}" placeholder="Optional" class="input px-3 py-2 border rounded-md shadow-sm" />
+                <label for="lapDistance" class="block text-sm font-medium text-gray-700">Distanz dieser Runde (km,
+                    optional):</label>
+                <input type="number" step="0.01" id="lapDistance" th:field="*{distance}" placeholder="Optional"
+                       class="input px-3 py-2 border rounded-md shadow-sm"/>
 
-                <label for="lapDuration" class="block text-sm font-medium text-gray-700">Dauer dieser Runde (HH:MM:SS):</label>
-                <input type="text" id="lapDuration" th:field="*{duration}" placeholder="z.B. 00:05:30" required class="input px-3 py-2 border rounded-md shadow-sm" />
+                <label for="lapDuration" class="block text-sm font-medium text-gray-700">Dauer dieser Runde
+                    (HH:MM:SS):</label>
+                <input type="text" id="lapDuration" th:field="*{duration}" placeholder="z.B. 00:05:30" required
+                       class="input px-3 py-2 border rounded-md shadow-sm"/>
 
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Runde hinzufügen</button>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Runde
+                    hinzufügen
+                </button>
             </form>
         </div>
 
 
-        <div th:if="${laps.isEmpty()}" class="text-gray-600">
+        <div th:if="${run.laps.isEmpty()}" class="text-gray-600">
             <p>Für diesen Lauf wurden noch keine Runden gespeichert.</p>
         </div>
 
-        <div th:unless="${laps.isEmpty()}" class="overflow-x-auto">
+        <div th:unless="${run.laps.isEmpty()}" class="overflow-x-auto">
             <table class="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm">
                 <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rundennummer</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Distanz (km)</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dauer</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aktionen</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Sportart
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Rundennummer
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Distanz
+                        (km)
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dauer
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" th:text="${run.sport == 1 ? 'min/km' : (run.sport == 2 ? 'km/h' : 'Andere')}">Pace</th>
+
                 </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
-                <tr th:each="lap : ${laps}">
+                <tr th:each="lap : ${run.laps}">
+
+                    <td class="px-6 py-4 whitespace-nowrap" th:text="${lap.sport == 1 ? 'Laufen' : (lap.sport == 2 ? 'Radfahren' : 'Andere')}">Laufen</td>
                     <td class="px-6 py-4 whitespace-nowrap" th:text="${lap.lapNumber}"></td>
-                    <td class="px-6 py-4 whitespace-nowrap" th:text="${lap.distance}"></td>
-                    <td class="px-6 py-4 whitespace-nowrap" th:text="${lap.duration}"></td>
                     <td class="px-6 py-4 whitespace-nowrap">
+                        <p>
+                            <span th:text="${@distanceUtils.formatToKilometersDecimal(lap.distance)}">0</span>
+                        </p>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <p th:if="${lap.total_timer_time != null}" th:with="myCustomDuration=${T(java.time.Duration).ofSeconds(lap.total_timer_time)}">
+                            <span th:text="${@durationUtils.format(myCustomDuration)}"></span>
+                        </p>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                    <span th:text="${@sportMetricFormatter.formatMetric(lap.sport, lap.distance, lap.total_timer_time)}">
+                        04:00 /km oder 25.0 km/h
+                    </span>
                     </td>
                 </tr>
                 </tbody>

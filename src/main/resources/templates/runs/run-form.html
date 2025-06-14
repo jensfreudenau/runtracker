@@ -30,7 +30,9 @@
                             <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Speichern</button>
                             <a th:href="@{/runs}" class="block text-center mt-2 text-gray-600 hover:text-gray-800">Abbrechen</a>
                         </form>
-                        <form th:action="@{/runs/uploadFit}" method="post" enctype="multipart/form-data" class="mb-8 p-4 border border-gray-200 rounded-md bg-gray-50">
+
+                        <form th:action="${run.id != null ? '/runs/uploadFit/' + run.id : '/runs/uploadFit'}"
+                              method="post" enctype="multipart/form-data" class="mb-8 p-4 border border-gray-200 rounded-md bg-gray-50">
                             <div class="mb-4">
                                 <label for="fitFile" class="block text-gray-700 text-sm font-bold mb-2">Wähle eine .FIT-Datei:</label>
                                 <input type="file" name="file" id="fitFile" accept=".fit" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>

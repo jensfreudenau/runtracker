@@ -1,7 +1,7 @@
 package com.runtracker.controller;
 
 import com.runtracker.model.Run;
-import com.runtracker.service.FitFileService;
+import com.runtracker.fit.FitFileService;
 import com.runtracker.service.RunService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

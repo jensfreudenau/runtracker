@@ -1,9 +1,15 @@
 package com.runtracker.controller;
 
+import com.runtracker.dto.LapDTO;
+import com.runtracker.dto.SummaryDTO;
 import com.runtracker.exceptionHandler.FitException;
+import com.runtracker.fit.FitField;
+import com.runtracker.fit.FitFileService;
+import com.runtracker.fit.LapToRunMapper;
+import com.runtracker.fit.SummaryToRunMapper;
 import com.runtracker.model.Lap;
 import com.runtracker.model.Run;
-import com.runtracker.service.FitFileService;
+import com.runtracker.service.LapService;
 import com.runtracker.service.RunService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,31 +19,26 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/runs")
 public class RunController {
     private final RunService runService;
+    private final LapService lapService;
     private final FitFileService fitFileService;
-    private List<Run> runs = new ArrayList<>();
-    public Long nextId = 1L; // Einfacher Zähler für IDs
+    private Long runId;
 
-    public RunController(RunService runService, FitFileService fitFileService) {
+    public RunController(RunService runService, LapService lapService, FitFileService fitFileService) {
         this.runService = runService;
-        this.fitFileService = fitFileService; // Jetzt korrekt zugewiesen
-
-        // Deine Dummy-Daten-Initialisierung
-        runs.add(new Run("Morgenlauf", LocalDate.of(2025, 6, 1), LocalTime.of(8, 0), "Park", "Frischer Start", 3.0));
-        runs.add(new Run("Abendjogging", LocalDate.of(2025, 6, 3), LocalTime.of(19, 30), "Waldweg", "Nach der Arbeit", 3.5));
-        runs.forEach(run -> run.setId(nextId++));
+        this.lapService = lapService;
+        this.fitFileService = fitFileService;
     }
 
     @GetMapping
@@ -64,28 +65,6 @@ public class RunController {
         } else {
             displayDate = LocalDate.now(); // Standard: aktuelles Datum
         }
-
-        List<Run> sportEvents = new ArrayList<>();
-        // Beispieltermine für den aktuellen Monat (Juni 2025)
-//        sportEvents.add(new Run("Fußballtraining", LocalDate.of(2025, 6, 10), LocalTime.of(18, 0), "Sportplatz A", "Wöchentliches Training"));
-//        sportEvents.add(new Run("Schwimmkurs", LocalDate.of(2025, 6, 12), LocalTime.of(16, 30), "Hallenbad", "Fortgeschrittenenkurs"));
-//        sportEvents.add(new Run("Basketballspiel", LocalDate.of(2025, 6, 10), LocalTime.of(20, 0), "Turnhalle B", "Freundschaftsspiel"));
-//        sportEvents.add(new Run("Lauf-Event", LocalDate.of(2025, 6, 15), LocalTime.of(9, 0), "Stadtpark", "5km Lauf"));
-//        sportEvents.add(new Run("Fußballtraining", LocalDate.of(2025, 6, 10), LocalTime.of(18, 0), "Sportplatz A", "Wöchentliches Training"));
-//        sportEvents.add(new Run("Schwimmkurs", LocalDate.of(2025, 6, 12), LocalTime.of(16, 30), "Hallenbad", "Fortgeschrittenenkurs"));
-//        sportEvents.add(new Run("Basketballspiel", LocalDate.of(2025, 6, 10), LocalTime.of(20, 0), "Turnhalle B", "Freundschaftsspiel"));
-//        sportEvents.add(new Run("Lauf-Event", LocalDate.of(2025, 6, 15), LocalTime.of(9, 0), "Stadtpark", "5km Lauf"));
-//        // Beispieltermine für einen anderen Monat (Juli 2025)
-//        sportEvents.add(new Run("Yoga-Kurs", LocalDate.of(2025, 7, 5), LocalTime.of(10, 0), "Gemeinschaftsraum", "Einsteigerkurs"));
-//        sportEvents.add(new Run("Wandertag", LocalDate.of(2025, 7, 20), LocalTime.of(8, 0), "Berge", "Ganztagswanderung"));
-        List<Run> filteredEvents = sportEvents.stream()
-                .filter(event -> event.getDate().getYear() == displayDate.getYear() && event.getDate().getMonth() == displayDate.getMonth())
-                .toList();
-        // Gruppiere die Termine nach Datum für eine einfachere Anzeige im Kalender
-
-        Map<LocalDate, List<Run>> eventsByDate = filteredEvents.stream().collect(Collectors.groupingBy(Run::getDate));
-        model.addAttribute("eventsByDate", eventsByDate);
-        model.addAttribute("currentDate", displayDate); // Für die Anzeige des aktuellen Monats/Jahres
 
         return "runs/calendar"; // Verweist auf die Thymeleaf-Vorlage "calendar.html"
     }
@@ -145,38 +124,27 @@ public class RunController {
     }
 
     // --- Neue Methode für den FIT-Upload ---
-    @PostMapping("/uploadFit")
-    public String uploadFitFile(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes) {
+    @PostMapping({"/uploadFit", "/uploadFit/{id}"})
+    public String uploadFitFile(@PathVariable(name = "id", required = false) Long id, @RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes) {
         if (file.isEmpty()) {
             redirectAttributes.addFlashAttribute("message", "Bitte wählen Sie eine Datei zum Hochladen aus.");
             return "redirect:/runs/edit";
         }
 
         try (InputStream inputStream = file.getInputStream()) {
-            double averageSpeed = fitFileService.getAvgSpeedKmPerHour(inputStream);
+            SummaryDTO summaryDTO = fitFileService.getSummary(inputStream);
 
-            if (averageSpeed != -1.0) {
-                // Hier könntest du weitere Metadaten aus der FIT-Datei extrahieren,
-                // z.B. Startzeit, Datum, Distanz, etc., um einen vollständigeren Run zu erstellen.
-                // Für dieses Beispiel erstellen wir nur einen einfachen Run mit der Geschwindigkeit.
+            Run run = (id != null)
+                    ? runService.findById(id).orElse(new Run())
+                    : new Run();
 
-                Run newRun = new Run();
-                newRun.setName(file.getOriginalFilename() != null ? file.getOriginalFilename() : "FIT-Aktivität");
-                newRun.setDate(LocalDate.now()); // Standardmäßig das heutige Datum
-                newRun.setTime(LocalTime.now()); // Standardmäßig die aktuelle Zeit
-                newRun.setAverageSpeed(averageSpeed);
-                newRun.setDescription("Importiert aus FIT-Datei.");
+            run = SummaryToRunMapper.mapToRun(summaryDTO, run);
+            run.setName(file.getOriginalFilename());
+            run.setDate(LocalDate.now());
+            run.setTime(LocalTime.now());
+            runId = runService.saveRun(run, getCurrentUsername());
+            redirectAttributes.addFlashAttribute("message", String.format("Datei erfolgreich hochgeladen!"));
 
-                // Füge den neuen Lauf zu deiner Liste/Datenbank hinzu
-                newRun.setId(nextId++);
-                runs.add(newRun);
-
-                redirectAttributes.addFlashAttribute("message",
-                        String.format("Datei erfolgreich hochgeladen! Durchschnittsgeschwindigkeit: %.2f km/h", averageSpeed));
-            } else {
-                redirectAttributes.addFlashAttribute("message",
-                        "FIT-Datei erfolgreich hochgeladen, aber keine Durchschnittsgeschwindigkeit gefunden.");
-            }
 
         } catch (FitException e) {
             redirectAttributes.addFlashAttribute("message", "Fehler beim Parsen der FIT-Datei: " + e.getMessage());
@@ -186,7 +154,31 @@ public class RunController {
             e.printStackTrace();
         }
 
-        return "redirect:/runs"; // Weiterleitung zurück zur Bearbeitungsseite
+        try (InputStream inputStream = file.getInputStream()) {
+            if (runId != null) {
+
+                List<LapDTO> lapDTOs = fitFileService.getLaps(inputStream);
+                Run run = runService.findById(runId).orElseThrow();
+                for (LapDTO lapDTO : lapDTOs) {
+                    int start_time = lapDTO.getInt(FitField.START_TIME); // oder anderer eindeutiger Wert
+                    Optional<Lap> existing = lapService.findByRunIdAndStartTime(runId, start_time);
+
+                    Lap lap = existing.orElse(new Lap());
+                    lap = LapToRunMapper.mapToLap(lapDTO, lap);
+
+                    lap.setRun(run);
+                    lap.setDate(LocalDate.now());
+                    lap.setTime(LocalTime.now());
+
+                    lapService.save(lap);
+                }
+            }
+        } catch (IOException | FitException ex) {
+            throw new RuntimeException(ex);
+        }
+
+
+        return "redirect:/runs";
     }
 
     // Verarbeitet das Absenden des Formulars (Erstellen und Bearbeiten)
@@ -194,7 +186,7 @@ public class RunController {
     public String saveRun(@ModelAttribute Run run, RedirectAttributes redirectAttributes) {
         String username = getCurrentUsername();
         try {
-            runService.saveRun(run, username);
+            Long runId = runService.saveRun(run, username);
             redirectAttributes.addFlashAttribute("message", "Lauf erfolgreich gespeichert!");
             return "redirect:/runs";
         } catch (IllegalArgumentException e) {

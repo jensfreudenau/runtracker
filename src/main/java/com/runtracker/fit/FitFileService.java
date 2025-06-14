@@ -1,22 +1,38 @@
 package com.runtracker.fit;
 
 import com.garmin.fit.*;
+import com.runtracker.dto.LapDTO;
+import com.runtracker.dto.SummaryDTO;
 import com.runtracker.exceptionHandler.FitException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
-import java.text.SimpleDateFormat;
-import java.util.EnumMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class FitFileService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(FitFileService.class);
 
     public FitFileService() {
     }
 
-    public Summary getSummary(InputStream inputStream) throws FitException {
+    public List<LapDTO> getLaps(InputStream inputStream) throws FitException {
+        try {
+            Decode decode = new Decode();
+            MesgBroadcaster broadcaster = new MesgBroadcaster(decode);
+            LapListener lapListener = new LapListener();
+            broadcaster.addListener(lapListener);
+            decode.read(inputStream, broadcaster, broadcaster);
+            return lapListener.getLaps(); // jetzt Liste statt nur eine Lap
+        } catch (Exception e) {
+            throw new FitException("Fehler beim Parsen der FIT-Datei");
+        }
+    }
+
+    public SummaryDTO getSummary(InputStream inputStream) throws FitException {
         try {
             Decode decode = new Decode();
             MesgBroadcaster broadcaster = new MesgBroadcaster(decode);
@@ -29,98 +45,58 @@ public class FitFileService {
         }
     }
 
-    public static class Summary {
-        private final Map<FitField, Object> data;
+    private static class LapListener implements LapMesgListener {
+        private final List<LapDTO> lapDTOS = new ArrayList<>();
 
-        public Summary(Map<FitField, Object> data) {
-            this.data = data;
-        }
+        @Override
+        public void onMesg(LapMesg lapMesg) {
+            LapDTO lapDTO = new LapDTO();
+            for (Field field : lapMesg.getFields()) {
+                String name = field.getName();
+                Object value = field.getValue();
+//                String cap = name.substring(0, 1).toUpperCase() + name.substring(1);
+//                lap.setDistance(lapDTO.getDouble(FitField.TOTAL_DISTANCE));
+//                LOGGER.warn("Names: {}", cap);
+//                LOGGER.warn("Names: {}", name.toUpperCase());
 
-        public double getTotalDistanceKm() {
-            return getDouble(FitField.TOTAL_DISTANCE) / 1000.0;
-        }
-
-        public double getTotalTimerTime() {
-            return getDouble(FitField.TOTAL_TIMER_TIME);
-        }
-
-        public int getAvgHeartRate() {
-            return getInt(FitField.AVG_HEART_RATE);
-        }
-
-        public int getMaxHeartRate() {
-            return getInt(FitField.MAX_HEART_RATE);
-        }
-
-        public int getCalories() {
-            return getInt(FitField.CALORIES);
-        }
-
-        public String getFormattedTimestamp() {
-            Object ts = data.get(FitField.TIMESTAMP);
-            if (ts instanceof DateTime) {
-                return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(((DateTime) ts).getDate());
+//                LOGGER.warn("set" + cap + "(lapDTO.getDouble(FitField." +name.toUpperCase() + "))");
+//                LOGGER.warn("Value: {}", value);
+                FitField.fromFitName(name).ifPresent(fe -> lapDTO.set(fe, value));
             }
-            return null;
+            lapDTOS.add(lapDTO);
         }
 
-        public String getFormattedStartTime() {
-            Object ts = data.get(FitField.START_TIME);
-            if (ts instanceof DateTime) {
-                return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(((DateTime) ts).getDate());
-            }
-            return null;
-        }
-
-        public double getAvgSpeedKmPerHour() {
-            double dist = getDouble(FitField.TOTAL_DISTANCE);
-            double time = getDouble(FitField.TOTAL_TIMER_TIME);
-            return (dist > 0 && time > 0) ? Math.round((dist / time * 3.6) * 100.0) / 100.0 : -1.0;
-        }
-
-        private double getDouble(FitField field) {
-            Object value = data.get(field);
-            return value instanceof Number ? ((Number) value).doubleValue() : 0.0;
-        }
-
-        private int getInt(FitField field) {
-            Object value = data.get(field);
-            return value instanceof Number ? ((Number) value).intValue() : 0;
-        }
-
-        public Set<FitField> getAvailableFields() {
-            return data.keySet();
-        }
-
-        public Object getRaw(FitField field) {
-            return data.get(field);
+        public List<LapDTO> getLaps() {
+            return lapDTOS;
         }
     }
 
     private static class SummaryListener implements SessionMesgListener {
-
-        private final Map<FitField, Object> fields = new EnumMap<>(FitField.class);
+        private final SummaryDTO summaryDTO = new SummaryDTO();
 
         @Override
         public void onMesg(SessionMesg mesg) {
-            // Direkt bekannte Timestamp-Felder verarbeiten
-            if (mesg.getTimestamp() != null) {
-                fields.put(FitField.TIMESTAMP, mesg.getTimestamp());
-            }
-
-            // Alle Felder durchgehen
             for (Field field : mesg.getFields()) {
                 String name = field.getName();
                 Object value = field.getValue();
+//                LOGGER.warn("Name: {}", name.toUpperCase());
+//                LOGGER.warn("Value: {}", value);
+//                LOGGER.warn("Wert: {}, Datentyp (Einfacher Name): {}", value, value.getClass().getSimpleName());
+//                if ("start_time".equals(name) || "timestamp".equals(name)) {
+//                    Object values = mesg.getTimestamp();
+//                    FitField.fromFitName(name).ifPresent(f -> summary.set(f, values));
+//                }
 
-                if ("timestamp".equals(name)) continue; // bereits verarbeitet
-
-                FitField.fromFitName(name).ifPresent(fitField -> fields.put(fitField, value));
+//                FitField.fromFitName(name).ifPresentOrElse(
+//                        vae -> System.out.println("Found: " + vae),
+//                        () -> LOGGER.warn("Not Found: {}", name)
+//                );
+                FitField.fromFitName(name).ifPresent(fe -> summaryDTO.set(fe, value));
             }
         }
 
-        public Summary toSummary() {
-            return new Summary(fields);
+        public SummaryDTO toSummary() {
+            return summaryDTO;
         }
     }
 }
