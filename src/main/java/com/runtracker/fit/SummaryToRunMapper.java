@@ -22,6 +22,8 @@ public class SummaryToRunMapper {
         run.setNormalized_power(summaryDTO.getInt(FitField.NORMALIZED_POWER));
         run.setAvg_temperature(summaryDTO.getInt(FitField.AVG_TEMPERATURE));
         run.setTotal_elapsed_time(summaryDTO.getDouble(FitField.TOTAL_ELAPSED_TIME));
+        run.setTotal_ascent(summaryDTO.getInt(FitField.TOTAL_ASCENT));
+        run.setTotal_descent(summaryDTO.getInt(FitField.TOTAL_DESCENT));
         run.setTotal_timer_time(summaryDTO.getDouble(FitField.TOTAL_TIMER_TIME));
         run.setTotal_distance(summaryDTO.getDouble(FitField.TOTAL_DISTANCE));
         run.setTotal_cycles(summaryDTO.getInt(FitField.TOTAL_CYCLES));

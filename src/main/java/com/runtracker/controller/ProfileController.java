@@ -113,7 +113,6 @@ public class ProfileController {
             profile.setPhoto(newFilename);
         }
         try {
-
             profileService.saveProfile(profile, username);
             redirectAttributes.addFlashAttribute("message", "Profil erfolgreich gespeichert!");
             return "redirect:/profile";

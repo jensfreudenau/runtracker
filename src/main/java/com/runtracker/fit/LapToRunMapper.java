@@ -23,10 +23,10 @@ public class LapToRunMapper {
         lap.setEnhanced_max_speed(lapDTO.getDouble(FitField.ENHANCED_MAX_SPEED));
         lap.setEnhanced_min_altitude(lapDTO.getDouble(FitField.ENHANCED_MIN_ALTITUDE));
         lap.setEnhanced_max_altitude(lapDTO.getDouble(FitField.ENHANCED_MAX_ALTITUDE));
-        lap.setMessage_index(lapDTO.getInt(FitField.MESSAGE_INDEX));
+        lap.setLapNumber(lapDTO.getInt(FitField.MESSAGE_INDEX));
         lap.setTotal_calories(lapDTO.getDouble(FitField.TOTAL_CALORIES));
-        lap.setAvg_power(lapDTO.getDouble(FitField.AVG_POWER));
-        lap.setMax_power(lapDTO.getDouble(FitField.MAX_POWER));
+        lap.setAvg_power(lapDTO.getInt(FitField.AVG_POWER));
+        lap.setMax_power(lapDTO.getInt(FitField.MAX_POWER));
         lap.setTotal_ascent(lapDTO.getInt(FitField.TOTAL_ASCENT));
         lap.setTotal_descent(lapDTO.getInt(FitField.TOTAL_DESCENT));
         lap.setNormalized_power(lapDTO.getDouble(FitField.NORMALIZED_POWER));
@@ -40,7 +40,7 @@ public class LapToRunMapper {
         lap.setEvent_type(lapDTO.getDouble(FitField.EVENT_TYPE));
         lap.setAvg_heart_rate(lapDTO.getInt(FitField.AVG_HEART_RATE));
         lap.setMax_heart_rate(lapDTO.getInt(FitField.MAX_HEART_RATE));
-        lap.setAvg_cadence(lapDTO.getDouble(FitField.AVG_CADENCE));
+        lap.setAvg_cadence(lapDTO.getInt(FitField.AVG_CADENCE));
         lap.setMax_cadence(lapDTO.getInt(FitField.MAX_CADENCE));
         lap.setIntensity(lapDTO.getDouble(FitField.INTENSITY));
         lap.setLap_trigger(lapDTO.getDouble(FitField.LAP_TRIGGER));

@@ -35,17 +35,16 @@ public class DistanceUtils {
      * @return Der formatierte String (z.B. "4,8 km").
      */
     public String formatToKilometersDecimal(double meters) {
-        if (meters < 0) {
-            return "Ungültige Distanz";
+        if (meters <= 0) {
+            return "";
         }
-
         // Konvertiere Meter in Kilometer
         double kilometers = meters / 1000.0;
 
         // Verwende String.format für eine präzise Formatierung mit Komma als Dezimaltrennzeichen
         // %.1f bedeutet 1 Nachkommastelle, f ist für float/double
         // Locale.GERMAN sorgt dafür, dass das Komma als Dezimaltrennzeichen verwendet wird
-        return String.format(java.util.Locale.GERMAN, "%.2f km", kilometers);
+        return String.format(java.util.Locale.GERMAN, "%.2f", kilometers);
     }
 
     /**

@@ -1,5 +1,7 @@
-<head th:replace="~{fragments/header :: head}"></head>
+<head th:replace="~{fragments/header :: head}" xmlns:18="http://www.w3.org/1999/xhtml"></head>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
 <nav th:replace="~{fragments/navbar :: nav}"></nav>
+
 <article class="shadow-md bg-white dark:bg-gray-800 tracking-wide pb-24">
 
     <main class="max-w-4xl mx-auto mt-20 p-6 bg-white rounded-xl shadow">
@@ -16,77 +18,71 @@
 
         <div class="mb-8 p-4 border rounded-md bg-gray-50">
             <h2 class="text-xl font-semibold mb-2">Lauf:
-                <span th:text="${#temporals.format(run.date, 'dd.MM.yyyy')}"></span>
-                <span th:text="${#temporals.format(run.starttime, 'dd.MM.yyyy')}"></span>
+                <span th:text="${@dateTimeFormatterComponent.formatDateTime(run.starttime, 'yyyy-MM-dd HH:mm:ss', 'dd.MM.yyyy HH:mm')}">0</span>
             </h2>
             <p><strong>Distanz:</strong>
                 <span th:text="${@distanceUtils.formatToKilometersDecimal(run.distance)}">0</span>
-
-
             </p>
             <p><strong>Dauer:</strong>
                 <span th:text="${run.duration}"></span>
+            </p>
+            <p><strong>Ø:</strong>
+            <span th:text="${@sportMetricFormatter.formatMetric(run.sport, run.distance, run.total_timer_time)}">
+                04:00 /km oder 25.0 km/h
+            </span>
+            </p>
+            <p><strong>Ø Heatrate:</strong>
+            <span th:text="${run.avg_heart_rate}">0</span>
+            </p>
+            <p><strong>Training Effect Anaerob:</strong>
+            <span th:text="${run.total_anaerobic_training_effect}">0</span>
+            </p>
+            <p><strong>Total Training Effect:</strong>
+            <span th:text="${run.total_training_effect}">0</span>
+            </p>
+            <p><strong>Anstieg:</strong>
+            <span th:text="${run.total_ascent}">0</span>m
             </p>
             <p><strong>Notizen:</strong> <span th:text="${run.notes}"></span></p>
             <a th:href="@{/runs/edit/{id}(id=${run.id})}" class="text-indigo-600 hover:text-indigo-900 mt-2 block">Lauf
                 bearbeiten</a>
         </div>
-
-        <h2 class="text-xl font-semibold mb-4">Runden des Laufs</h2>
-
-        <div class="mb-8 p-4 border rounded-md bg-white shadow">
-            <h3 class="text-lg font-semibold mb-2">Neue Runde hinzufügen</h3>
-            <form th:action="@{/runs/{runId}/addLap(runId=${run.id})}" th:object="${newLap}" method="post"
-                  class="flex flex-col gap-3">
-                <label for="lapNumber" class="block text-sm font-medium text-gray-700">Rundennummer:</label>
-                <input type="number" id="lapNumber" th:field="*{lapNumber}" placeholder="Optional"
-                       class="input px-3 py-2 border rounded-md shadow-sm"/>
-
-                <label for="lapDistance" class="block text-sm font-medium text-gray-700">Distanz dieser Runde (km,
-                    optional):</label>
-                <input type="number" step="0.01" id="lapDistance" th:field="*{distance}" placeholder="Optional"
-                       class="input px-3 py-2 border rounded-md shadow-sm"/>
-
-                <label for="lapDuration" class="block text-sm font-medium text-gray-700">Dauer dieser Runde
-                    (HH:MM:SS):</label>
-                <input type="text" id="lapDuration" th:field="*{duration}" placeholder="z.B. 00:05:30" required
-                       class="input px-3 py-2 border rounded-md shadow-sm"/>
-
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Runde
-                    hinzufügen
-                </button>
-            </form>
-        </div>
-
+        <canvas id="hrChart" style="width: 100%; height: 400px;"></canvas>
+        <canvas id="pcoChart" width="600" height="300"></canvas>
+        <div id="map" style="height: 400px;"></div>
 
         <div th:if="${run.laps.isEmpty()}" class="text-gray-600">
             <p>Für diesen Lauf wurden noch keine Runden gespeichert.</p>
         </div>
 
         <div th:unless="${run.laps.isEmpty()}" class="overflow-x-auto">
-            <table class="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm">
-                <thead class="bg-gray-50">
+            <table class="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm text-left text-xs font-medium">
+                <thead class="bg-gray-50  text-gray-500">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Sportart
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Rundennummer
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Distanz
-                        (km)
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dauer
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" th:text="${run.sport == 1 ? 'min/km' : (run.sport == 2 ? 'km/h' : 'Andere')}">Pace</th>
-
+                    <th>Runden</th>
+                    <th>Sport </th>
+                    <th>Distanz (km)</th>
+                    <th>Zeit in Bewegung</th>
+                    <th>Ø Pace in Bewegung(min/km)</th>
+                    <th>Ø Herzfrequenz</th>
+                    <th>Maximale Herzfrequenz</th>
+                    <th>Anstieg gesamt(m)</th>
+                    <th>Abstieg gesamt(m)</th>
+                    <th>Ø Leistung</th>
+                    <th>Max. Leistung</th>
+                    <th>Ø Schrittfrequenz (Laufen)</th>
+                    <th>Ø Bodenkontaktzeit(ms)</th>
+                    <th>Durchschnittliche Balance der Bodenkontaktzeit(%)</th>
+                    <th>Ø Schrittlänge	</th>
+                    <th>Ø vertikale Bewegung(cm)</th>
+                    <th>Durchschnittliches vertikales Verhältnis</th>
+                    <th>Ø Temperatur</th>
                 </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                 <tr th:each="lap : ${run.laps}">
-
+                    <td class="px-6 py-4 whitespace-nowrap" th:text="${lap.lapNumber+1}"></td>
                     <td class="px-6 py-4 whitespace-nowrap" th:text="${lap.sport == 1 ? 'Laufen' : (lap.sport == 2 ? 'Radfahren' : 'Andere')}">Laufen</td>
-                    <td class="px-6 py-4 whitespace-nowrap" th:text="${lap.lapNumber}"></td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <p>
                             <span th:text="${@distanceUtils.formatToKilometersDecimal(lap.distance)}">0</span>
@@ -98,10 +94,23 @@
                         </p>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                    <span th:text="${@sportMetricFormatter.formatMetric(lap.sport, lap.distance, lap.total_timer_time)}">
-                        04:00 /km oder 25.0 km/h
-                    </span>
+                        <span th:text="${@sportMetricFormatter.formatMetric(lap.sport, lap.distance, lap.total_timer_time)}">
+                            04:00 /km oder 25.0 km/h
+                        </span>
                     </td>
+                    <td class="px-6 py-4 whitespace-nowrap" th:text="${lap.avg_heart_rate}"></td>
+                    <td class="px-6 py-4 whitespace-nowrap" th:text="${lap.max_heart_rate}"></td>
+                    <td class="px-6 py-4 whitespace-nowrap" th:text="${lap.total_ascent}"></td>
+                    <td class="px-6 py-4 whitespace-nowrap" th:text="${lap.total_descent}"></td>
+                    <td class="px-6 py-4 whitespace-nowrap" th:text="${lap.avg_power}"></td>
+                    <td class="px-6 py-4 whitespace-nowrap" th:text="${lap.max_power}"></td>
+                    <td class="px-6 py-4 whitespace-nowrap" th:text="${lap.avg_cadence*2}"></td>
+                    <td class="px-6 py-4 whitespace-nowrap" th:text="${lap.avg_stance_time}"></td>
+                    <td class="px-6 py-4 whitespace-nowrap" th:text="${lap.avg_stance_time_balance}"></td>
+                    <td class="px-6 py-4 whitespace-nowrap" th:if="${lap.avg_step_length != null}" th:text="${@distanceUtils.formatToKilometersDecimal(lap.avg_step_length)}"></td>
+                    <td class="px-6 py-4 whitespace-nowrap" th:text="${lap.avg_vertical_oscillation}"></td>
+                    <td class="px-6 py-4 whitespace-nowrap" th:text="${lap.avg_vertical_ratio}"></td>
+                    <td class="px-6 py-4 whitespace-nowrap" th:text="${lap.avg_temperature}"></td>
                 </tr>
                 </tbody>
             </table>
@@ -111,4 +120,164 @@
             <a th:href="@{/runs}" class="text-gray-600 hover:text-gray-800">&larr; Zurück zur Lauf-Übersicht</a>
         </div>
     </main>
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        fetch('/runs/gps/[[${run.id}]]')
+            .then(res => res.json())
+            .then(data => {
+                const points = data.map(p => [p.latitude, p.longitude]);
+
+                const map = L.map('map').setView(points[0], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
+
+                L.polyline(points, { color: 'blue' }).addTo(map);
+            });
+    </script>
+
+    <script>
+        fetch('/runs/heartrate/[[${run.id}]]')
+            .then(res => res.json())
+            .then(data => {
+                const startTime = new Date(data[0].timestamp).getTime();
+
+                const labels = data.map(dp => {
+                    const elapsedSec = Math.floor((new Date(dp.timestamp).getTime() - startTime) / 1000);
+                    const hrs = Math.floor(elapsedSec / 3600);
+                    const mins = Math.floor((elapsedSec % 3600) / 60);
+                    const secs = elapsedSec % 60;
+                    return hrs > 0
+                        ? `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+                        : `${mins}:${secs.toString().padStart(2, '0')}`;
+                });
+
+                const values = data.map(dp => dp.heartRate);
+
+                new Chart(document.getElementById('hrChart'), {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Herzfrequenz',
+                            data: values,
+                            borderColor: 'red',
+                            borderWidth: 1,
+                            pointRadius: 0,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            decimation: {
+                                enabled: false,
+                                algorithm: 'min-max'
+                            }
+                        },
+                        scales: {
+                            x: {
+                                display: true,
+                                title: {
+                                    display: false,
+                                    text: 'Vergangene Zeit'
+                                },
+                                ticks: {
+                                    autoSkip: true
+                                }
+                            },
+                            y: {
+                                beginAtZero: false,
+                                title: {
+                                    display: true,
+                                    text: 'Herzfrequenz (BPM)'
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+    </script>
+    <script>
+        fetch('/runs/pco/[[${run.id}]]')
+            .then(res => res.json())
+            .then(data => {
+                const startTime = new Date(data[0].timestamp).getTime();
+                const labels = data.map(dp => {
+                    const elapsedSec = Math.floor((new Date(dp.timestamp).getTime() - startTime) / 1000);
+                    const hrs = Math.floor(elapsedSec / 3600);
+                    const mins = Math.floor((elapsedSec % 3600) / 60);
+                    const secs = elapsedSec % 60;
+                    return hrs > 0
+                        ? `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+                        : `${mins}:${secs.toString().padStart(2, '0')}`;
+                });
+                const leftData = data
+                    .filter(dp => dp.leftPco !== null)
+                    .map(dp => ({ x: new Date(dp.timestamp).getTime(), y: dp.leftPco }));
+
+                const rightData = data
+                    .filter(dp => dp.rightPco !== null)
+                    .map(dp => ({ x: new Date(dp.timestamp).getTime(), y: dp.rightPco }));
+
+                new Chart(document.getElementById('pcoChart'), {
+                    type: 'scatter',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Left PCO',
+                                data: leftData,
+                                backgroundColor: 'blue',
+                                pointRadius: 1
+                            },
+                            {
+                                label: 'Right PCO',
+                                data: rightData,
+                                backgroundColor: 'green',
+                                pointRadius: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+
+
+                        plugins: {
+                            legend: {
+                                position: 'top'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Platform Center Offset (PCO) über Zeit'
+                            }
+                        },
+                        scales: {
+                            x: {
+                                display: true,
+                                title: {
+                                    display: false,
+                                    text: 'Zeit'
+                                },
+                                ticks: {
+                                    autoSkip: true
+                                }
+                            },
+                            y: {
+                                min: -30,
+                                max: 30,
+                                title: {
+                                    display: true,
+
+                                    text: 'PCO Wert (mm)'
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+    </script>
+
+
 </article>

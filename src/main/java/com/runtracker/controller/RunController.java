@@ -11,6 +11,7 @@ import com.runtracker.model.Lap;
 import com.runtracker.model.Run;
 import com.runtracker.service.LapService;
 import com.runtracker.service.RunService;
+import com.runtracker.service.UserService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -21,10 +22,14 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Controller
@@ -33,12 +38,15 @@ public class RunController {
     private final RunService runService;
     private final LapService lapService;
     private final FitFileService fitFileService;
+    private final UserService userService;
     private Long runId;
-
-    public RunController(RunService runService, LapService lapService, FitFileService fitFileService) {
+    private static final String UPLOAD_DIR = "src/main/resources/static/uploads/";
+    public RunController(RunService runService, LapService lapService, FitFileService fitFileService, UserService userService) {
         this.runService = runService;
         this.lapService = lapService;
         this.fitFileService = fitFileService;
+        this.userService = userService;
+
     }
 
     @GetMapping
@@ -46,7 +54,6 @@ public class RunController {
         // 1. Aktuellen Benutzer ermitteln
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName(); // Holt den Benutzernamen des eingeloggten Benutzers
-        // 2. Läufe des Benutzers aus der Datenbank abrufen
         List<Run> userRuns = runService.findRunsByUsername(username);
         // 3. Daten dem Model hinzufügen
         model.addAttribute("runs", userRuns); // "runs" ist der Name, unter dem die Daten in der View verfügbar sind
@@ -85,6 +92,7 @@ public class RunController {
                     redirectAttributes.addFlashAttribute("error", "Lauf nicht gefunden oder nicht berechtigt.");
                     return "redirect:/runs";
                 });
+//        model.addAttribute("runs", userRuns);
     }
 
     // Zeigt das Formular zum Erstellen eines neuen Laufs an
@@ -125,11 +133,18 @@ public class RunController {
 
     // --- Neue Methode für den FIT-Upload ---
     @PostMapping({"/uploadFit", "/uploadFit/{id}"})
-    public String uploadFitFile(@PathVariable(name = "id", required = false) Long id, @RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes) {
+    public String uploadFitFile(@PathVariable(name = "id", required = false) Long id, @RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes) throws IOException {
         if (file.isEmpty()) {
             redirectAttributes.addFlashAttribute("message", "Bitte wählen Sie eine Datei zum Hochladen aus.");
             return "redirect:/runs/edit";
         }
+        Long userId = userService.getCurrentUserId();
+        Path uploadPath = Paths.get(UPLOAD_DIR + "/" + userId + "/activities");
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+        Path filePath = uploadPath.resolve(Objects.requireNonNull(file.getOriginalFilename()));
+        Files.copy(file.getInputStream(), filePath);
 
         try (InputStream inputStream = file.getInputStream()) {
             SummaryDTO summaryDTO = fitFileService.getSummary(inputStream);
@@ -144,8 +159,6 @@ public class RunController {
             run.setTime(LocalTime.now());
             runId = runService.saveRun(run, getCurrentUsername());
             redirectAttributes.addFlashAttribute("message", String.format("Datei erfolgreich hochgeladen!"));
-
-
         } catch (FitException e) {
             redirectAttributes.addFlashAttribute("message", "Fehler beim Parsen der FIT-Datei: " + e.getMessage());
             e.printStackTrace();
@@ -160,8 +173,8 @@ public class RunController {
                 List<LapDTO> lapDTOs = fitFileService.getLaps(inputStream);
                 Run run = runService.findById(runId).orElseThrow();
                 for (LapDTO lapDTO : lapDTOs) {
-                    int start_time = lapDTO.getInt(FitField.START_TIME); // oder anderer eindeutiger Wert
-                    Optional<Lap> existing = lapService.findByRunIdAndStartTime(runId, start_time);
+                    int lapNumber = lapDTO.getInt(FitField.MESSAGE_INDEX);
+                    Optional<Lap> existing = lapService.findByRunIdAndLapNumber(runId, lapNumber);
 
                     Lap lap = existing.orElse(new Lap());
                     lap = LapToRunMapper.mapToLap(lapDTO, lap);
@@ -176,8 +189,6 @@ public class RunController {
         } catch (IOException | FitException ex) {
             throw new RuntimeException(ex);
         }
-
-
         return "redirect:/runs";
     }
 
@@ -211,9 +222,27 @@ public class RunController {
         return "redirect:/runs";
     }
 
+    @GetMapping("/heartrate/{id}")
+    @ResponseBody
+    public List<FitFileService.HeartRatePoint> getHeartRateSeries(@PathVariable Long id) throws FitException {
+        return runService.getHeartRateSeries(id);
+    }
+    @GetMapping("/gps/{id}")
+    @ResponseBody
+    public List<FitFileService.GpsPoint> getGpsSeries(@PathVariable Long id) throws FitException {
+        return runService.getGpsSeries(id);
+    }
+
+    @GetMapping("/pco/{id}")
+    @ResponseBody
+    public List<FitFileService.PcoPoint> getPcoSeries(@PathVariable Long id) throws FitException {
+        return runService.getPCOData(id);
+
+    }
     // Hilfsmethode, um den Benutzernamen des eingeloggten Benutzers zu erhalten
     private String getCurrentUsername() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return authentication.getName();
     }
+
 }

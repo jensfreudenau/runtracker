@@ -37,7 +37,7 @@ public class SummaryDTO {
         long timestampSeconds = (long) fields.get(FitField.TIMESTAMP);
         timestampSeconds += 631065600L;
         Timestamp currTS = new Timestamp(timestampSeconds * 1000);
-        DateFormat formattedDate = new SimpleDateFormat("yyyy-MM-dd H:mm:s");
+        DateFormat formattedDate = new SimpleDateFormat("yyyy-MM-dd H:mm:ss");
         return formattedDate.format(currTS);
     }
 

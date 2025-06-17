@@ -18,6 +18,7 @@ public class Lap {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate date;
     private LocalTime time;
+    @Column(name = "message_index")
     private int lapNumber;
     private Double distance;
     private int heartrate;
@@ -43,9 +44,9 @@ public class Lap {
     private Double enhanced_max_speed;
     private Double enhanced_min_altitude;
     private Double enhanced_max_altitude;
-    private Integer message_index;
-    private Double avg_power;
-    private Double max_power;
+//    private Integer message_index;
+    private Integer avg_power;
+    private Integer max_power;
     private Integer total_ascent;
     private Integer total_descent;
     private Double normalized_power;
@@ -61,7 +62,7 @@ public class Lap {
     private Double event_type;
     private Integer avg_heart_rate;
     private Integer max_heart_rate;
-    private Double avg_cadence;
+    private Integer avg_cadence;
     private Integer max_cadence;
     private Double intensity;
     private Double lap_trigger;

@@ -20,8 +20,11 @@ public class LapService {
         lapRepository.save(lap);
         return lap.getId();
     }
-    public Optional<Lap> findByRunIdAndStartTime(Long id, Integer intensity) {
-        return lapRepository.findByRunIdAndStartTime(id, intensity);
+    public Optional<Lap> findByRunIdAndStartTime(Long id, Integer start_time) {
+        return lapRepository.findByRunIdAndStartTime(id, (double)start_time);
+    }
+    public Optional<Lap> findByRunIdAndLapNumber(Long id, Integer labNumber) {
+        return lapRepository.findByRunIdAndLapNumber(id, labNumber);
     }
 
     public Optional<Lap> findById(Long id) {
